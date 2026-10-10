@@ -27,9 +27,12 @@ jobs:
           # l'app web embarquée (les fichiers du bundle racine)
           cp index.html style.css app.js store.js pdf.js facturepdf.js relances.js manifest.webmanifest "$APP/"
           cp -r icons "$APP/icons"
+          # icônes de l'app natives : à la RACINE du bundle (cf. CFBundleIconFiles)
+          cp icons/icon-180.png icons/icon-192.png icons/icon-512.png "$APP/"
           # contrôles : binaire arm64 valide + fichiers embarqués
           file "$APP/ZeroPaperasse" | grep -q "arm64"
           test -f "$APP/index.html" && test -f "$APP/store.js"
+          test -f "$APP/icon-180.png"
 
       - name: Fabriquer l'IPA (Payload)
         run: |
