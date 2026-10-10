@@ -44,7 +44,7 @@
       handler:^(UIAlertAction *action) { completionHandler(NO); }]];
   [alerte addAction:[UIAlertAction actionWithTitle:@"Confirmer" style:UIAlertActionStyleDefault
       handler:^(UIAlertAction *action) { completionHandler(YES); }]];
-  [self presentViewController:alerte animated:YES completion:completionHandler];
+  [self presentViewController:alerte animated:YES completion:NULL];
 }
 
 - (void)webView:(WKWebView *)webView runJavaScriptTextInputPanelWithPrompt:(NSString *)prompt
@@ -57,7 +57,7 @@
       handler:^(UIAlertAction *action) { completionHandler(nil); }]];
   [alerte addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault
       handler:^(UIAlertAction *action) { completionHandler(alerte.textFields.firstObject.text); }]];
-  [self presentViewController:alerte animated:YES completion:completionHandler];
+  [self presentViewController:alerte animated:YES completion:NULL];
 }
 
 /* l'app est toujours en portrait, comme la PWA */
