@@ -22,6 +22,26 @@ static NSString *MIMEpour(NSString *chemin) {
   NSString *chemin = tache.request.URL.path;
   if (chemin.length == 0 || [chemin isEqualToString:@"/"]) chemin = @"/index.html";
 
+  // copie de sécurité tenue à jour par le pont natif (Documents de l'app)
+  if ([chemin isEqualToString:@"/__donnees/sauvegarde.json"]) {
+    NSString *copie = [[NSHomeDirectory() stringByAppendingPathComponent:@"Documents"]
+                          stringByAppendingPathComponent:@"zeropaperasse-donnees.json"];
+    NSData *donnees = [NSData dataWithContentsOfFile:copie];
+    if (!donnees) {
+      [tache didFailWithError:[NSError errorWithDomain:@"zp" code:404
+                                              userInfo:@{NSLocalizedDescriptionKey : @"pas encore de copie"}]];
+      return;
+    }
+    NSHTTPURLResponse *reponse = [[NSHTTPURLResponse alloc] initWithURL:tache.request.URL
+                                                             statusCode:200
+                                                            HTTPVersion:@"HTTP/1.1"
+                                                           headerFields:@{@"Content-Type" : @"application/json"}];
+    [tache didReceiveResponse:reponse];
+    [tache didReceiveData:donnees];
+    [tache didFinish];
+    return;
+  }
+
   NSString *fichier = [[NSBundle mainBundle].resourcePath stringByAppendingPathComponent:chemin];
   NSData *donnees = [NSData dataWithContentsOfFile:fichier];
   if (!donnees) { // page inconnue -> on sert l'app (une seule page)

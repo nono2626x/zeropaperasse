@@ -39,6 +39,22 @@ const ZP = (() => {
     d.modifie_le = new Date().toISOString();
     try { localStorage.setItem(KEY, JSON.stringify(d)); }
     catch (e) { throw new Error("Stockage du téléphone plein — exporte une sauvegarde puis supprime d'anciens documents."); }
+    copieDeSecuriteNative();
+  }
+  // app iPhone : chaque modification écrit une copie dans les Documents de l'app
+  // (relue par le pont natif et restaurée automatiquement si le stockage interne est vidé)
+  function copieDeSecuriteNative() {
+    try {
+      const w = window.webkit;
+      if (w && w.messageHandlers && w.messageHandlers.zp) {
+        const json = exportJSON();
+        const octets = new TextEncoder().encode(json);
+        let binaire = "";
+        for (let i = 0; i < octets.length; i += 8192)
+          binaire += String.fromCharCode.apply(null, octets.subarray(i, i + 8192));
+        w.messageHandlers.zp.postMessage(JSON.stringify({ action: "sauvegarde", data: btoa(binaire) }));
+      }
+    } catch (e) { /* hors app native : rien à faire */ }
   }
   function load() {
     try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; }

@@ -68,6 +68,17 @@ window.addEventListener("unhandledrejection", e => window.__zpErrors.push("Prome
   $("#sheet-close").addEventListener("click", fermerSheet);
   $("#sheet-backdrop").addEventListener("click", fermerSheet);
 
+  /* ---------- pont vers l'app iPhone (native) ---------- */
+  const pontNatif = () => !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.zp);
+  const envoyerNatif = (action, nom, data) =>
+    window.webkit.messageHandlers.zp.postMessage(JSON.stringify({ action, nom, data }));
+  const versBase64 = blob => new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = () => res(String(fr.result).split(",")[1]);
+    fr.onerror = rej;
+    fr.readAsDataURL(blob);
+  });
+
   /* ---------- aperçu PDF ---------- */
   function apercuPDF(docu) {
     const cli = ZP.client(docu.client_id);
@@ -87,7 +98,9 @@ window.addEventListener("unhandledrejection", e => window.__zpErrors.push("Prome
       <p class="aide">${echap(nom)}</p>
     `);
     $("#btn-partager").addEventListener("click", () => partagerPDF(blob, nom));
-    $("#btn-ouvrir").addEventListener("click", () => window.open(url, "_blank"));
+    const bo = $("#btn-ouvrir");
+    if (pontNatif()) bo.remove(); // en natif, la feuille de partage iOS fait tout
+    else bo.addEventListener("click", () => window.open(url, "_blank"));
     const cv = $("#btn-convertir");
     if (cv) cv.addEventListener("click", () => {
       try {
@@ -99,6 +112,12 @@ window.addEventListener("unhandledrejection", e => window.__zpErrors.push("Prome
   }
 
   async function partagerPDF(blob, nom) {
+    // app iPhone : feuille de partage iOS native (WhatsApp, mail, Fichiers, impression…)
+    if (pontNatif()) {
+      try { envoyerNatif("partage", nom, await versBase64(blob)); }
+      catch (e) { toast("Partage impossible : " + e.message); }
+      return;
+    }
     try {
       const fichier = new File([blob], nom, { type: "application/pdf" });
       if (navigator.canShare && navigator.canShare({ files: [fichier] })) {
@@ -474,7 +493,7 @@ window.addEventListener("unhandledrejection", e => window.__zpErrors.push("Prome
           <button class="btn danger mini" id="s-reset">Tout effacer</button>
         </div>
       </div>
-      <p class="aide" style="text-align:center">ZéroPaperasse v1.2 — données 100 % locales, fonctionne hors ligne, aucun serveur contacté.</p>
+      <p class="aide" style="text-align:center">ZéroPaperasse v1.3 — données 100 % locales, fonctionne hors ligne, aucun serveur contacté.</p>
     </div>`;
 
     $("#s-save").addEventListener("click", () => {
@@ -493,11 +512,19 @@ window.addEventListener("unhandledrejection", e => window.__zpErrors.push("Prome
         toast("Réglages enregistrés ✓"); rendre();
       } catch (e) { toast("Erreur : " + e.message); }
     });
-    $("#s-export").addEventListener("click", () => {
-      const blob = new Blob([ZP.exportJSON()], { type: "application/json" });
+    $("#s-export").addEventListener("click", async () => {
+      const json = ZP.exportJSON();
+      const nomFichier = `zeropaperasse-sauvegarde-${ZP.todayISO()}.json`;
+      if (pontNatif()) { // app iPhone : la sauvegarde part dans la feuille de partage iOS
+        const blob = new Blob([json], { type: "application/json" });
+        envoyerNatif("partage", nomFichier, await versBase64(blob));
+        toast("Choisis où enregistrer ✓");
+        return;
+      }
+      const blob = new Blob([json], { type: "application/json" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob); blobs.add(a.href);
-      a.download = `zeropaperasse-sauvegarde-${ZP.todayISO()}.json`;
+      a.download = nomFichier;
       a.click(); toast("Sauvegarde exportée ✓");
     });
     $("#s-import").addEventListener("click", () => $("#s-fichier").click());
@@ -579,6 +606,23 @@ window.addEventListener("unhandledrejection", e => window.__zpErrors.push("Prome
 
   /* ---------- démarrage ---------- */
   ZP.init();
+  restaurerSiVide();
   if (new URLSearchParams(location.search).has("selftest")) selftest();
   else rendre();
+
+  /* filet de sécurité : si le stockage interne de l'app a été vidé par iOS
+     mais qu'une copie de sécurité existe (Documents), on restaure tout seul */
+  async function restaurerSiVide() {
+    try {
+      const actuel = JSON.parse(localStorage.getItem("zp_data_v1") || "null");
+      if (actuel && (actuel.clients.length || actuel.docs.length || (actuel.settings && actuel.settings.nom))) return;
+      const r = await fetch("zp://local/__donnees/sauvegarde.json");
+      if (!r.ok) return;
+      const txt = await r.text();
+      JSON.parse(txt); // valide ?
+      ZP.importJSON(txt);
+      rendre();
+      toast("Données restaurées ✓");
+    } catch (e) { /* pas de copie ou pas en app native : rien à faire */ }
+  }
 })();
