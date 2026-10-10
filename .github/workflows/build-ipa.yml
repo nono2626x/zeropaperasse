@@ -1,0 +1,47 @@
+name: "Compiler l'IPA iPhone"
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  ipa:
+    runs-on: macos-14
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Compiler l'app iOS (arm64, sans signature)
+        run: |
+          set -e
+          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          APP=build/ZeroPaperasse.app
+          mkdir -p "$APP"
+          xcrun clang -arch arm64 -miphoneos-version-min=15.0 -fobjc-arc \
+            -isysroot "$SDK" \
+            -framework UIKit -framework WebKit -framework Foundation \
+            ios/main.m ios/AppDelegate.m ios/ViewController.m ios/ZPSchemeHandler.m \
+            -o "$APP/ZeroPaperasse"
+          cp ios/Info.plist "$APP/Info.plist"
+          # l'app web embarquée (les fichiers du bundle racine)
+          cp index.html style.css app.js store.js pdf.js facturepdf.js relances.js manifest.webmanifest "$APP/"
+          cp -r icons "$APP/icons"
+          # contrôles : binaire arm64 valide + fichiers embarqués
+          file "$APP/ZeroPaperasse" | grep -q "arm64"
+          test -f "$APP/index.html" && test -f "$APP/store.js"
+
+      - name: Fabriquer l'IPA (Payload)
+        run: |
+          set -e
+          mkdir -p Payload
+          cp -r build/ZeroPaperasse.app Payload/
+          zip -qry ZeroPaperasse-unsigned.ipa Payload
+          ls -lh ZeroPaperasse-unsigned.ipa
+
+      - name: Publier l'IPA en artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZeroPaperasse-ipa
+          path: ZeroPaperasse-unsigned.ipa
+          retention-days: 90

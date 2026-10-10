@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZéroPaperasse — la page à montrer</title>
+<style>
+  :root { --orange:#ea580c; --encre:#1e222a; --gris:#6b7280; --fond:#faf7f2; }
+  * { box-sizing:border-box; margin:0; }
+  body { font:16px/1.55 -apple-system,"Segoe UI",Roboto,sans-serif; color:var(--encre); background:#eee; }
+  .page { max-width:800px; margin:24px auto; background:#fff; padding:44px 48px; box-shadow:0 4px 24px rgba(0,0,0,.12); }
+  .bandeau { display:flex; align-items:center; gap:14px; border-bottom:4px solid var(--orange); padding-bottom:18px; }
+  .logo { width:54px; height:54px; border-radius:14px; background:linear-gradient(135deg,#f97316,#ea580c); display:grid; place-items:center; color:#fff; font-size:28px; }
+  h1 { font-size:30px; letter-spacing:-.02em; }
+  .slogan { color:var(--gris); }
+  .promesse { font-size:20px; font-weight:700; margin:26px 0 6px; }
+  .chiffres { display:flex; gap:12px; margin:20px 0; }
+  .chiffre { flex:1; background:var(--fond); border-radius:14px; padding:14px 16px; }
+  .chiffre b { display:block; font-size:24px; color:var(--orange); }
+  .chiffre span { font-size:13px; color:var(--gris); }
+  h2 { font-size:17px; margin:26px 0 10px; }
+  .modules { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .mod { border:1.5px solid #eee7dc; border-radius:14px; padding:12px 14px; font-size:14px; }
+  .mod b { display:block; margin-bottom:2px; }
+  .vs { display:flex; gap:12px; margin:14px 0; }
+  .vs > div { flex:1; border-radius:14px; padding:14px 16px; font-size:14px; }
+  .vs .non { background:#fdf0ef; }
+  .vs .oui { background:#eef8f0; }
+  .tarif { background:var(--encre); color:#fff; border-radius:16px; padding:20px 22px; display:flex; align-items:center; gap:18px; margin-top:22px; }
+  .tarif .prix { font-size:34px; font-weight:800; color:#fb923c; white-space:nowrap; }
+  .tarif p { font-size:14px; }
+  .contact { margin-top:22px; font-size:14px; color:var(--gris); display:flex; justify-content:space-between; }
+  .contact b { color:var(--encre); }
+  @media print { body { background:#fff; } .page { box-shadow:none; margin:0; max-width:none; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="bandeau">
+    <div class="logo">🧾</div>
+    <div>
+      <h1>ZéroPaperasse</h1>
+      <div class="slogan">Vos devis, factures et relances — sur votre téléphone, sans internet, sans abonnement.</div>
+    </div>
+  </div>
+
+  <p class="promesse">Vos factures partent le soir même. Vos clients paient plus vite.</p>
+
+  <div class="chiffres">
+    <div class="chiffre"><b>30 s</b><span>pour envoyer une facture PDF propre, depuis le chantier</span></div>
+    <div class="chiffre"><b>+40 €</b><span>d'indemnité de recouvrement rappelée dans chaque relance</span></div>
+    <div class="chiffre"><b>0 €/mois</b><span>d'abonnement — payé une fois, à vous pour toujours</span></div>
+  </div>
+
+  <h2>Ce que vous avez dans la poche</h2>
+  <div class="modules">
+    <div class="mod"><b>🧾 Devis & factures conformes</b>PDF officiels numérotés, TVA ou franchise, IBAN, mentions légales — rien à remplir de plus.</div>
+    <div class="mod"><b>🔔 Relances qui font payer</b>L'app repère les retards et écrit l'e-mail à votre place : amical, ferme, dernier avertissement.</div>
+    <div class="mod"><b>📱 Installé sur VOTRE téléphone</b>Fonctionne sans réseau, sur iPhone comme Android. Vos données ne quittent pas votre poche.</div>
+    <div class="mod"><b>💾 Sauvegarde en 1 geste</b>Un fichier de sauvegarde que vous gardez (ou que je vérifie pour vous chaque mois).</div>
+  </div>
+
+  <h2>Pourquoi pas un logiciel en ligne ?</h2>
+  <div class="vs">
+    <div class="non"><b>Les abonnements « en ligne »</b><br>12 à 30 €/mois à vie, vos données chez eux, ça s'arrête si vous ne payez plus.</div>
+    <div class="oui"><b>ZéroPaperasse</b><br>Payé une fois, installé chez vous, marche hors réseau, vos données restent chez vous.</div>
+  </div>
+
+  <div class="tarif">
+    <div class="prix">100 €<span style="font-size:15px;color:#bbb"> installé</span></div>
+    <p><b>Installation complète sur votre téléphone</b> : votre identité, votre IBAN, vos clients, votre première vraie facture générée avec vous. Option suivi & mises à jour : 10 €/mois.</p>
+  </div>
+
+  <div class="contact">
+    <div><b>Contact :</b> [TON PRÉNOM] — [TON TÉLÉPHONE] — [TON MAIL]</div>
+    <div><b>Essai :</b> démo gratuite chez vous, sans engagement</div>
+  </div>
+</div>
+</body>
+</html>
