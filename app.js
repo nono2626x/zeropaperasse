@@ -33,6 +33,26 @@ window.addEventListener("unhandledrejection", e => window.__zpErrors.push("Prome
     clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 2400);
   }
 
+  /* ---------- confirmation intégrée (les dialogues natifs sont bloqués
+     dans les apps iPhone : on fait notre propre modale, plus jolie en plus) ---------- */
+  function confirmer(titre, message, opts = {}) {
+    return new Promise(resoudre => {
+      const fond = document.createElement("div");
+      fond.className = "confirm-fond";
+      fond.innerHTML = `<div class="confirm-carte" role="dialog" aria-modal="true">
+        <h3>${echap(titre)}</h3><p>${echap(message)}</p>
+        <div class="séparé" style="margin-top:16px">
+          <button class="btn neutre" data-c="0">Annuler</button>
+          <button class="btn ${opts.danger ? "danger" : "primaire"}" data-c="1">${echap(opts.ok || "Confirmer")}</button>
+        </div></div>`;
+      document.body.appendChild(fond);
+      requestAnimationFrame(() => fond.classList.add("on"));
+      const fin = rep => { fond.classList.remove("on"); setTimeout(() => fond.remove(), 180); resoudre(!!rep); };
+      fond.querySelector("[data-c='1']").addEventListener("click", () => fin(true));
+      fond.querySelector("[data-c='0']").addEventListener("click", () => fin(false));
+    });
+  }
+
   /* ---------- feuille modale ---------- */
   function ouvrirSheet(titre, html) {
     $("#sheet-title").textContent = titre;
@@ -109,6 +129,8 @@ window.addEventListener("unhandledrejection", e => window.__zpErrors.push("Prome
   /* ---- accueil ---- */
   function vAccueil(v) {
     const cfg = ZP.settings(), d = ZP.dashboard();
+    const hh = new Date().getHours();
+    const salut = hh >= 18 || hh < 5 ? "Bonsoir" : "Bonjour";
     let h = `<div class="col">`;
     if (!cfg.nom) {
       h += `<div class="carte" style="background:linear-gradient(135deg,#ffedd5,#fff7ed)">
@@ -118,12 +140,18 @@ window.addEventListener("unhandledrejection", e => window.__zpErrors.push("Prome
           <button class="btn primaire" id="bienvenue-demo">Voir la démo</button>
           <button class="btn secondaire" id="bienvenue-reglages">Mon entreprise</button>
         </div></div>`;
+    } else {
+      h += `<div class="hero">
+        <div class="hero-haut"><span>${salut} 👋</span><b>${echap(cfg.nom)}</b></div>
+        <div class="hero-n">${eur(d.aEncaisser)}</div>
+        <div class="hero-l">${d.nbRetards ? `${d.nbRetards} facture${d.nbRetards > 1 ? "s" : ""} en retard — à récupérer` : "tout est à jour ✓"}</div>
+      </div>`;
     }
     h += `<div class="grille-stats">
       <div class="stat"><div class="n">${eur(d.caMois)}</div><div class="l">facturé ce mois</div></div>
-      <div class="stat"><div class="n">${eur(d.aEncaisser)}</div><div class="l">à encaisser</div></div>
-      <div class="stat ${d.nbRetards ? "alerte" : "ok"}"><div class="n">${d.nbRetards}</div><div class="l">facture(s) en retard</div></div>
-      <div class="stat"><div class="n">${fmtTemps(d.minutes)}</div><div class="l">de paperasse évitée</div></div>
+      <div class="stat"><div class="n">${d.nbDocs}</div><div class="l">documents</div></div>
+      <div class="stat ${d.nbRetards ? "alerte" : "ok"}"><div class="n">${d.nbRetards}</div><div class="l">en retard</div></div>
+      <div class="stat"><div class="n">${fmtTemps(d.minutes)}</div><div class="l">temps gagné</div></div>
     </div>`;
     if (d.nbRetards) {
       h += `<div class="bande-alerte"><span>⚠️</span><div><b>${d.nbRetards} facture(s) en retard</b> — ${eur(d.enRetard)} à récupérer</div>
@@ -137,8 +165,10 @@ window.addEventListener("unhandledrejection", e => window.__zpErrors.push("Prome
     v.innerHTML = h;
 
     const bd = $("#bienvenue-demo");
-    if (bd) bd.addEventListener("click", () => {
-      if (ZP.docs().length || ZP.clients().length) { if (!confirm("Remplacer les données actuelles par la démo ?")) return; }
+    if (bd) bd.addEventListener("click", async () => {
+      if (ZP.docs().length || ZP.clients().length) {
+        if (!await confirmer("Charger la démo", "Cela remplacera les données actuelles par l'exemple « Plomberie Durand ».")) return;
+      }
       ZP.chargerDemo(); toast("Démo chargée ✓"); rendre();
     });
     const br = $("#bienvenue-reglages");
@@ -196,8 +226,8 @@ window.addEventListener("unhandledrejection", e => window.__zpErrors.push("Prome
       } catch (e) { toast(e.message); }
     });
     const dl = $("#c-del");
-    if (dl) dl.addEventListener("click", () => {
-      if (confirm("Supprimer ce client ?")) {
+    if (dl) dl.addEventListener("click", async () => {
+      if (await confirmer("Supprimer ce client ?", "Cette action est définitive.", { danger: true, ok: "Supprimer" })) {
         try { ZP.delClient(c.id); toast("Client supprimé"); fermerSheet(); } catch (e) { toast(e.message); }
       }
     });
@@ -221,8 +251,8 @@ window.addEventListener("unhandledrejection", e => window.__zpErrors.push("Prome
     if (Segment === "facture") liste = liste.filter(x => x.type === "facture");
     if (Segment === "devis") liste = liste.filter(x => x.type === "devis");
     let h = `<div class="col"><h1 class="vue">Documents</h1><p class="sous">Devis et factures, numérotés automatiquement</p>
-      <div class="séparé" style="margin-bottom:12px">
-        ${["facture", "devis", "tout"].map(s => `<button class="btn ${Segment === s ? "primaire" : "neutre"} mini" data-seg="${s}" style="flex:1">${s === "tout" ? "Tous" : s + "s"}</button>`).join("")}
+      <div class="segmente">
+        ${["facture", "devis", "tout"].map(s => `<button class="${Segment === s ? "on" : ""}" data-seg="${s}">${s === "tout" ? "Tous" : s + "s"}</button>`).join("")}
       </div>
       ${liste.length ? liste.map(itemDoc).join("")
         : `<div class="vide"><div class="g">🧾</div>Rien ici.<br>Touche <b>+</b> pour créer ${Segment === "devis" ? "un devis" : "une facture"}.</div>`}
@@ -235,7 +265,11 @@ window.addEventListener("unhandledrejection", e => window.__zpErrors.push("Prome
   function formDocument() {
     const cfg = ZP.settings();
     if (!ZP.clients().length) {
-      if (confirm("Ajoute d'abord un client. Le faire maintenant ?")) { apresClient = formDocument; Vue = "clients"; rendre(); formClient(null); }
+      confirmer("Pas encore de client", "Pour créer un document, il faut d'abord un client. On l'ajoute maintenant ?", { ok: "Ajouter" })
+        .then(oui => {
+          if (!oui) return;
+          apresClient = formDocument; Vue = "clients"; rendre(); formClient(null);
+        });
       return;
     }
     const today = ZP.todayISO();
@@ -440,7 +474,7 @@ window.addEventListener("unhandledrejection", e => window.__zpErrors.push("Prome
           <button class="btn danger mini" id="s-reset">Tout effacer</button>
         </div>
       </div>
-      <p class="aide" style="text-align:center">ZéroPaperasse v1.0 — données 100 % locales, fonctionne hors ligne.</p>
+      <p class="aide" style="text-align:center">ZéroPaperasse v1.2 — données 100 % locales, fonctionne hors ligne, aucun serveur contacté.</p>
     </div>`;
 
     $("#s-save").addEventListener("click", () => {
@@ -470,20 +504,22 @@ window.addEventListener("unhandledrejection", e => window.__zpErrors.push("Prome
     $("#s-fichier").addEventListener("change", e => {
       const f = e.target.files[0]; if (!f) return;
       const fr = new FileReader();
-      fr.onload = () => {
-        if (!confirm("Remplacer les données actuelles par cette sauvegarde ?")) return;
+      fr.onload = async () => {
+        if (!await confirmer("Importer la sauvegarde", "Cela remplacera toutes les données actuelles par celles du fichier.", { ok: "Importer" })) return;
         try { ZP.importJSON(String(fr.result)); toast("Sauvegarde importée ✓"); rendre(); }
         catch (err) { toast("Fichier invalide : " + err.message); }
       };
       fr.readAsText(f);
     });
-    $("#s-demo").addEventListener("click", () => {
-      if ((ZP.docs().length || ZP.clients().length) && !confirm("Remplacer les données actuelles par la démo ?")) return;
+    $("#s-demo").addEventListener("click", async () => {
+      if (ZP.docs().length || ZP.clients().length) {
+        if (!await confirmer("Charger la démo", "Cela remplacera les données actuelles par l'exemple « Plomberie Durand ».")) return;
+      }
       ZP.chargerDemo(); toast("Démo chargée ✓"); Vue = "accueil"; rendre();
     });
-    $("#s-reset").addEventListener("click", () => {
-      if (!confirm("Effacer TOUTES les données (clients, documents, réglages) ?")) return;
-      if (!confirm("Dernière chance — tu as pensé à exporter ta sauvegarde ?")) return;
+    $("#s-reset").addEventListener("click", async () => {
+      if (!await confirmer("Tout effacer ?", "Clients, documents et réglages seront supprimés.", { danger: true, ok: "Tout effacer" })) return;
+      if (!await confirmer("Dernière chance", "Tu as bien pensé à exporter ta sauvegarde avant ?", { danger: true, ok: "Oui, tout effacer" })) return;
       ZP.resetAll(); toast("Tout est effacé"); Vue = "accueil"; rendre();
     });
   }

@@ -38,7 +38,7 @@ const ZP = (() => {
     d.schema = SCHEMA;
     d.modifie_le = new Date().toISOString();
     try { localStorage.setItem(KEY, JSON.stringify(d)); }
-    catch (e) { alert("Stockage plein : exporte une sauvegarde puis supprime d'anciens documents."); throw e; }
+    catch (e) { throw new Error("Stockage du téléphone plein — exporte une sauvegarde puis supprime d'anciens documents."); }
   }
   function load() {
     try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; }

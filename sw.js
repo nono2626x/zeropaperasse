@@ -1,6 +1,6 @@
 /* ZéroPaperasse — service worker : l'app fonctionne hors ligne après 1re ouverture */
 "use strict";
-const CACHE = "zp-v3";
+const CACHE = "zp-v4";
 const FICHIERS = [
   "./", "./index.html", "./style.css", "./app.js", "./store.js",
   "./pdf.js", "./facturepdf.js", "./relances.js", "./manifest.webmanifest",
